@@ -130,7 +130,6 @@ namespace PasswordService
         {
             _log?.WriteEntry("CodeSignerPasswordService starting...", EventLogEntryType.Information);
             Subscribe();
-            _storedPassword = new SecureString();
         }
 
         public void Stop()

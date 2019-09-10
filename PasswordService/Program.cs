@@ -1,5 +1,4 @@
 ﻿using System;
-using CommandLine;
 using Topshelf;
 
 namespace PasswordService
@@ -8,21 +7,17 @@ namespace PasswordService
     {
         private static int Main(string[] args)
         {
-            Parser.Default.ParseArguments<Options>(args)
-                  .WithParsed(opts =>
-                              {
-                                  if (!string.IsNullOrWhiteSpace(opts.Password))
-                                  {
-                                      var encrypted = Password.Set(opts.Password);
-                                      Console.WriteLine($"Password has been encrypted and saved: '{encrypted}'");
-                                  }
-
-                                  if (opts.NoService) Environment.Exit((int)TopshelfExitCode.Ok);
-                              });
             try
             {
                 var host = HostFactory.New(x =>
                                            {
+                                               x.AddCommandLineDefinition("setpassword", password => 
+                                               {
+                                                   var encrypted = Password.Set(password);
+                                                   Console.WriteLine($"Password has been encrypted and saved: '{encrypted}'");
+                                               });
+                                               x.AddCommandLineSwitch("noservice", _ => { Environment.Exit((int)TopshelfExitCode.Ok); });
+
                                                x.Service<CodeSignerPasswordService>(s =>
                                                                                     {
                                                                                         s.ConstructUsing(factory => new CodeSignerPasswordService());
@@ -55,18 +50,5 @@ namespace PasswordService
                 return (int)TopshelfExitCode.AbnormalExit;
             }
         }
-
-        #region Nested type: Options
-
-        internal class Options
-        {
-            [Option('n', "noservice", Required = false, Default = false, HelpText = "Do not run the service.")]
-            public bool NoService { get; set; }
-
-            [Option('p', "setpassword", Required = false, HelpText = "Encrypts the provided plain-text password and saves it to the app.config")]
-            public string Password { get; set; }
-        }
-
-        #endregion
     }
 }
